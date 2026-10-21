@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:rive/rive.dart';
+import 'dart:async';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -20,6 +21,32 @@ class _LoginScreenState extends State<LoginScreen> {
   SMITrigger? _trigSuccess;
   SMITrigger? _trigFail;
   SMINumber? _numLook;
+
+  //3.2 Timer para detener la animación de mirar a los lados después de 3 segundos
+  Timer? _typingDebonce;
+
+  //2.1 crear variable para FocusNode
+  final _emailFocusNode = FocusNode();
+  final _passwordFocusNode = FocusNode();
+
+  //2.2 Crear los oyentes (listeners)
+  @override
+  void initState() {
+    super.initState();
+    _emailFocusNode.addListener(() {
+      if (_emailFocusNode.hasFocus) {
+        if (_isHandsUp != null) {
+          _isHandsUp?.change(false);
+          _numLook?.value = 50.0;
+        }
+      }
+    });
+
+    _passwordFocusNode.addListener(() {
+      //Manos arriba en password
+      _isHandsUp?.change(_passwordFocusNode.hasFocus);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -61,16 +88,34 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 10),
                 //Email
                 TextField(
+                  //2.3 Asignar el FocusNode al TextField
+                  focusNode: _emailFocusNode,
                   //1.5 Vincular a campo de texto
                   onChanged: (value) {
                     if (_isHandsUp != null) {
                       //No tapes los ojos al ver el email
-                      _isHandsUp!.change(false);
+                      // _isHandsUp!.change(false);
                     }
                     //Si isChecking es null
                     if (_isChecking == null) return;
                     //Activa el modo chismoso
                     _isChecking!.change(true);
+                    //3.4 Implementar recorrido de miradas a los lados mientras se escribe
+                    //Ajuste de limites del 0 a 100
+                    //80 medida de calibración
+                    final lookValue =
+                        (value.length / 80.0 * 100.0).clamp(0.0, 100.0);
+                    _numLook?.value = lookValue;
+
+                    //3.5 Debounce: si vuelve a teclear, reinicia el contador
+                    _typingDebonce?.cancel();
+                    //Crear nuevo timer
+                    _typingDebonce = Timer(const Duration(seconds: 3), () {
+                      //Si se cierra la pantalla, termina la ejecución
+                      if (!mounted) return;
+                      //Mirada neutra
+                      _isChecking?.change(false);
+                    });
                   },
                   decoration: InputDecoration(
                     hintText: 'E-mail',
@@ -83,11 +128,13 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 10),
                 //Contraseña
                 TextField(
+                  //2.3 Asignar el FocusNode al TextField
+                  focusNode: _passwordFocusNode,
                   //1.5 Vincular a campo de texto
                   onChanged: (value) {
                     if (_isChecking != null) {
                       //No actives el modo chismoso en contraseña
-                      _isChecking!.change(false);
+                      //_isChecking!.change(false);
                     }
                     //Si isHandsUp es null
                     if (_isHandsUp == null) return;
@@ -119,5 +166,15 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    // Liberar los FocusNodes
+    _emailFocusNode.dispose();
+    _passwordFocusNode.dispose();
+    // Cancelar el timer si sigue activo
+    _typingDebonce?.cancel();
+    super.dispose();
   }
 }
