@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:rive/rive.dart';
 import 'dart:async';
-//5.1 Importar Firebase Auth y la pantalla de productos
+//5.1 Importar Firebase Auth y la pantalla de libros
 import 'package:firebase_auth/firebase_auth.dart';
-import 'products_screen.dart';
+import 'books_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -111,11 +111,11 @@ class _LoginScreenState extends State<LoginScreen> {
       _trigSuccess?.fire();
       await Future.delayed(const Duration(seconds: 2));
 
-      //5.7 Navegar a la pantalla de productos de Spring Boot
+      //5.7 Navegar al catálogo de libros de Spring Boot
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const ProductsScreen()),
+        MaterialPageRoute(builder: (_) => const BooksScreen()),
       );
     } catch (e) {
       //5.8 Si Firebase rechaza el login, apagar loading y mostrar al osito triste
