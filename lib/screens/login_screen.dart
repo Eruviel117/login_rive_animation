@@ -36,47 +36,31 @@ class _LoginScreenState extends State<LoginScreen> {
   final emailCrtl = TextEditingController();
   final passCrtl = TextEditingController();
 
-  //4.2 Error para mostrar en la UI 
-
-  String? emailError;
-  String? passError;
-
   //5.2 Variable para mostrar el CircularProgressIndicator mientras carga
   bool _isLoading = false;
 
-   // 4.3 Validadores
-  bool isValidEmail(String email) {
-    final re = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
-    return re.hasMatch(email);
-  }
+  //7.1 OWASP: un único mensaje genérico para cualquier fallo del Login.
+  //No se indica qué campo falló para no revelar si el correo existe.
+  static const String _invalidCredentialsMsg =
+      'Credenciales inválidas. Verifica tu correo y contraseña.';
 
-  bool isValidPassword(String pass) {
-    // mínimo 8, una mayúscula, una minúscula, un dígito y un especial
-    final re = RegExp(
-      r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$',
+  //7.2 Mostrar el mensaje global y la animación de fallo del osito
+  void _showInvalidCredentials() {
+    _trigFail?.fire();
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text(_invalidCredentialsMsg)),
     );
-    return re.hasMatch(pass);
   }
 
   //4.4 Accion del botón de login
   //5.3 Convertir _onLogin en asíncrono (Future<void> ... async)
   Future<void> _onLogin() async {
 
-    //Recortar espacios en blanco accidenatales 
+    //Recortar espacios en blanco accidenatales
     final email = emailCrtl.text.trim();
     final pass = passCrtl.text;
 
-    //Recalcular errores
-    final emailTypeError = isValidEmail(email) ? null : 'Email inválido';
-    final passTypeError = isValidPassword(pass) ? null : 'Contraseña inválida';
-
-    //4.5 Para mostrar el cambio 
-    setState(() {
-      emailError = emailTypeError;
-      passError = passTypeError;
-    });
-
-    //4.6 Cerrar el teclado y osos neutro 
+    //4.6 Cerrar el teclado y osos neutro
 
     FocusScope.of(context).unfocus();
     _typingDebonce?.cancel();
@@ -84,10 +68,9 @@ class _LoginScreenState extends State<LoginScreen> {
     _isHandsUp?.change(false);
     _numLook?.value = 50.0;
 
-    //4.7 Si algún campo tiene formato inválido, activar fallo y detener aquí
-    //(el éxito ahora lo decide Firebase)
-    if (emailTypeError != null || passTypeError != null) {
-      _trigFail?.fire();
+    //7.3 Solo validar que los campos no estén vacíos (sin Regex ni errores por campo)
+    if (email.isEmpty || pass.isEmpty) {
+      _showInvalidCredentials();
       return;
     }
 
@@ -119,15 +102,12 @@ class _LoginScreenState extends State<LoginScreen> {
       );
     } catch (e) {
       //5.8 Si Firebase rechaza el login, apagar loading y mostrar al osito triste
-      //Se avisa con un SnackBar para no marcar error en ningún campo específico
+      //7.4 Mismo mensaje genérico, sin marcar error en ningún campo específico
       if (!mounted) return;
       setState(() {
         _isLoading = false;
       });
-      _trigFail?.fire();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Credenciales incorrectas')),
-      );
+      _showInvalidCredentials();
     }
   }
   
@@ -222,8 +202,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     });
                   },
                   decoration: InputDecoration(
-                    //4.9 Vincular el error al TextField
-                    errorText: emailError,
                     hintText: 'E-mail',
                     prefixIcon: const Icon(Icons.email),
                     border: OutlineInputBorder(
@@ -251,8 +229,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   },
                   obscureText: _isObscure,
                   decoration: InputDecoration(
-                    //4.9 Vincular el error al TextField
-                    errorText: passError,
                     hintText: 'Contraseña',
                     prefixIcon: const Icon(Icons.lock),
                     suffixIcon: IconButton(
