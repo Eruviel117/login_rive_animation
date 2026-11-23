@@ -54,6 +54,30 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
+  //9.1 Recuperar contraseña: Dialog que pide el correo y envía el enlace de Firebase
+  Future<void> _showForgotPasswordDialog() async {
+    final email = await showDialog<String>(
+      context: context,
+      builder: (_) => _ForgotPasswordDialog(initialEmail: emailCrtl.text.trim()),
+    );
+
+    //Si canceló o no escribió nada, no hacemos nada
+    if (email == null || email.isEmpty) return;
+
+    //9.2 OWASP: mismo mensaje exista o no el correo (no revelar cuentas)
+    String message = 'Si el correo está registrado, te llegará un enlace para restablecer tu contraseña.';
+    try {
+      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'invalid-email') {
+        message = 'Escribe un correo válido.';
+      }
+    }
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  }
+
   //4.4 Accion del botón de login
   //5.3 Convertir _onLogin en asíncrono (Future<void> ... async)
   Future<void> _onLogin() async {
@@ -249,12 +273,18 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                SizedBox(
-                  width: screenSize.width,
-                  child: const Text(
-                    "Forgot password?",
-                    textAlign: TextAlign.right,
-                    style: TextStyle(decoration: TextDecoration.underline),
+                //9.3 "Forgot password?" ahora es un botón que abre el Dialog
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: _showForgotPasswordDialog,
+                    child: const Text(
+                      "Forgot password?",
+                      style: TextStyle(
+                        color: Colors.black,
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -319,6 +349,53 @@ class _LoginScreenState extends State<LoginScreen> {
     _passwordFocusNode.dispose();
     // Cancelar el timer si sigue activo
     _typingDebonce?.cancel();
+    super.dispose();
+  }
+}
+//9.6 Dialog de "Recuperar contraseña" con su propio controlador.
+//Al ser StatefulWidget, el controlador se libera (dispose) hasta que el Dialog
+//termina de cerrarse, y no mientras todavía se está dibujando.
+class _ForgotPasswordDialog extends StatefulWidget {
+  const _ForgotPasswordDialog({required this.initialEmail});
+
+  final String initialEmail;
+
+  @override
+  State<_ForgotPasswordDialog> createState() => _ForgotPasswordDialogState();
+}
+
+class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
+  late final TextEditingController _resetCtrl =
+      TextEditingController(text: widget.initialEmail);
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Recuperar contraseña'),
+      content: TextField(
+        controller: _resetCtrl,
+        keyboardType: TextInputType.emailAddress,
+        decoration: const InputDecoration(
+          hintText: 'Tu correo',
+          prefixIcon: Icon(Icons.email),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(context, _resetCtrl.text.trim()),
+          child: const Text('Enviar'),
+        ),
+      ],
+    );
+  }
+
+  @override
+  void dispose() {
+    _resetCtrl.dispose();
     super.dispose();
   }
 }

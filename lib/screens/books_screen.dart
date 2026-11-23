@@ -1,6 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+//9.4 Importar Firebase Auth y el Login para cerrar sesión
+import 'package:firebase_auth/firebase_auth.dart';
+import 'login_screen.dart';
 
 class BooksScreen extends StatelessWidget {
   const BooksScreen({super.key});
@@ -26,7 +29,24 @@ class BooksScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Catálogo de libros')),
+      appBar: AppBar(
+        title: const Text('Catálogo de libros'),
+        actions: [
+          //9.5 Cerrar sesión en Firebase y regresar al Login
+          IconButton(
+            tooltip: 'Cerrar sesión',
+            icon: const Icon(Icons.logout),
+            onPressed: () async {
+              await FirebaseAuth.instance.signOut();
+              if (!context.mounted) return;
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => const LoginScreen()),
+              );
+            },
+          ),
+        ],
+      ),
       // 6.3 FutureBuilder: espera la respuesta de la API y dibuja el resultado
       body: FutureBuilder<List<dynamic>>(
         future: fetchBooks(),
