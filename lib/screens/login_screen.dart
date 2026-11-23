@@ -4,6 +4,8 @@ import 'dart:async';
 //5.1 Importar Firebase Auth y la pantalla de libros
 import 'package:firebase_auth/firebase_auth.dart';
 import 'books_screen.dart';
+//8.9 Importar la pantalla de registro
+import 'sign_up_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -283,9 +285,15 @@ class _LoginScreenState extends State<LoginScreen> {
                     children: [
                       const Text("Don't have an account?"),
                       TextButton(
-                        onPressed: () {},
+                        //8.10 Ir al Registro con push (para poder regresar con la flecha)
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const SignUpScreen()),
+                          );
+                        },
                         child: const Text(
-                          "Register",
+                          "Sign up",
                           style: TextStyle(
                             color: Colors.black,
                             fontWeight: FontWeight.bold,
