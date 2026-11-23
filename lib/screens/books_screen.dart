@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 //9.4 Importar Firebase Auth y el Login para cerrar sesión
@@ -9,10 +10,14 @@ class BooksScreen extends StatelessWidget {
   const BooksScreen({super.key});
 
   // 6.1 Parámetro clave: URL base de la API library-backend (puerto 8091)
-  // - Web / iOS Simulator / macOS: usar http://localhost:8091
-  // - Emulador Android: cambiar localhost por 10.0.2.2 (http://10.0.2.2:8091)
+  // - Web (Chrome): http://localhost:8091
+  // - Emulador Android: http://10.0.2.2:8091 (10.0.2.2 apunta a la PC desde el emulador)
   // - Celular físico: usar la IP de tu computadora (ej. http://192.168.1.X:8091)
-  static const String baseUrl = 'http://localhost:8091';
+  // 10.1 Se elige automáticamente según la plataforma donde corre la app
+  static String get baseUrl =>
+      (!kIsWeb && defaultTargetPlatform == TargetPlatform.android)
+          ? 'http://10.0.2.2:8091'
+          : 'http://localhost:8091';
 
   // 6.2 Función para pedir la lista de libros al endpoint GET /books
   Future<List<dynamic>> fetchBooks() async {
