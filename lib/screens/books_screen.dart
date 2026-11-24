@@ -13,11 +13,17 @@ class BooksScreen extends StatelessWidget {
   // - Web (Chrome): http://localhost:8091
   // - Emulador Android: http://10.0.2.2:8091 (10.0.2.2 apunta a la PC desde el emulador)
   // - Celular físico: usar la IP de tu computadora (ej. http://192.168.1.X:8091)
-  // 10.1 Se elige automáticamente según la plataforma donde corre la app
-  static String get baseUrl =>
-      (!kIsWeb && defaultTargetPlatform == TargetPlatform.android)
-          ? 'http://10.0.2.2:8091'
-          : 'http://localhost:8091';
+  // 10.2 URL indicada al correr la app (celular físico), por ejemplo:
+  //      flutter run --dart-define=API_URL=http://localhost:8091  (con adb reverse)
+  static const String _apiUrl = String.fromEnvironment('API_URL');
+
+  // 10.1 Si no se indicó API_URL, se elige automáticamente según la plataforma
+  static String get baseUrl {
+    if (_apiUrl.isNotEmpty) return _apiUrl;
+    return (!kIsWeb && defaultTargetPlatform == TargetPlatform.android)
+        ? 'http://10.0.2.2:8091'
+        : 'http://localhost:8091';
+  }
 
   // 6.2 Función para pedir la lista de libros al endpoint GET /books
   Future<List<dynamic>> fetchBooks() async {
